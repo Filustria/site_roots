@@ -1,0 +1,15 @@
+name: "my-website"
+navbar:
+  title: "Ph.D. thesis draft"
+  left:
+    - text: "Home"
+      href: index.html
+    - text: "Blood tests"
+      href: blood.html
+output:
+  html_document:
+    theme: cosmo
+    highlight: textmate
+    include:
+      after_body: footer.html
+    css: styles.css

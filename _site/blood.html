@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+
+
+<title></title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+<link rel="stylesheet" href="styles.css" type="text/css" />
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #ffffff;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Ph.D. thesis draft</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="blood.html">Blood tests</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+
+</div>
+
+
+<div id="blood-tests-ordered-in-primary-care-in-rio-de-janeiro" class="section level1">
+<h1>Blood tests ordered in Primary Care in Rio de Janeiro</h1>
+<p>This analysis aims to identify patterns of physicians clinical behaviour regarding some blood test commonly ordered by doctors dealing with ambulatory patients in Primary Care. The period of analysis comprises every medical consultation in ambulatory care from January 1st, 2013 to November 1st, 2018 made by every doctors that work (or worked) in one of the 30 Primary Care Clinics at the ‘AP 31’ district in Rio de Janeiro. The total number of consultations was 2.967.694 during the period of analysis, that is the same period of the inclusion of the Eletronic Medical Records in the city.</p>
+<p>The total number of doctors that worked in the area is 952: 208 (21.8%) of them trained Family Physicians or residents in Family Medicine and 744 (78.2%) doctors with no special training for Primary Care, some of them with training in another residency (Internal Medicine, Pediatrics, OB/GYN). These doctors will be called ‘Generalists’ in this report.</p>
+<p>The rates were calculated for every doctor by dividing the number of each test ordered by the number of consultations made during a month. For comparison, the average rate was calculated for Family Physicians and Generalists.</p>
+<p>The blood tests chose for the sake of comparison are very common laboratory exams ordered in Primary Care and are sensitive for interventions aiming best practices in ambulatory care and special training in Family Medicine.</p>
+<p>The rationale for this study is that financial and institutional investments made in the last years to promote Family Medicine as the medical specialty for Primary Care in Rio de Janeiro should show some results such as better health outcomes, better care delivered for the patients and better use of healh resources available. In this study we will focus on blood tests as a resource that must be rationaly used by the health care provider and the hypothesis is that Family Physicians, due to their special training, order less blood tests then Generalists.</p>
+<ol style="list-style-type: decimal">
+<li>HEMOGRAM</li>
+</ol>
+<p>One of the most commonly ordered tests in Primary Care (PC). Physicians tend to order it if they need to order any other blood test, even if no information is required from this exam.</p>
+<p><img src="blood_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<ol start="2" style="list-style-type: decimal">
+<li>CREATININE</li>
+</ol>
+<p>Blood test commonly ordered for patients with suspition of Renal Failure and for patients at risk for cardiovascular events, such as those with Hypertension and Diabetes.</p>
+<p><img src="blood_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<ol start="3" style="list-style-type: decimal">
+<li>UREA</li>
+</ol>
+<p>Blood test commonly ordered for hospitalized patients and for those with Renal Failure as a secondary test to identify the origin of the renal disease. For patients in PC two conditions are likely to have this test ordered: Renal Failure and Heart Failure - two conditions not so prevalent in PC. For patients with Hypertension and Diabetes this test add no help to their treatment.</p>
+<p><img src="blood_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<ol start="4" style="list-style-type: decimal">
+<li>URIC ACID</li>
+</ol>
+<p>This blood test is specific for patients with (or suspition of) gout arthritis. Due to the fact that patients with end-stage kidney disease have a higher risk of death when their Uric Acid levels are high, some doctors use to order this test for every patient at risk for cardiovascular disease, even if it is not helpful for patients with no renal demage.</p>
+<p><img src="blood_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<ol start="5" style="list-style-type: decimal">
+<li>The Cholesterol Combo</li>
+</ol>
+<p>This combo is usualy ordered for patients at risk for cardiovascular events. Since the advent of cholesterol as one of the main responsible for heart attack and stroke, it is offered for almost every patient older than 45.</p>
+<p>All graphs but LDL Cholesterol show no difference between Family Physicians and Generalist. This only difference show that Family Physicians are more familiar with the formula used by the laboratories to calculate the LDL share of the Total Cholesterol. With this simple formula is posible to order only three test (Total Cholesterol, HDL Cholesterol and Triglycerids) to find the value for LDL Cholesterol.</p>
+<p><img src="blood_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p><img src="blood_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<p><img src="blood_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<p><img src="blood_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<ol start="6" style="list-style-type: decimal">
+<li>Glicose and A1C Hemoglobin</li>
+</ol>
+<p>This tests are among the most ordered exams in Primary Care. They usually are ordered for two reasons related to Diabetes and glucose metabolism problems. Glucose is the first exam ordered to diagnose Diabetes - two tests higher than 126 mg/dL makes the diagnosis. After a patient is diagnosed with Diabetes the condition is managed with hypoglicemic measures (diet, weight loss, exercises and some medications) and the patients A1C hemoglobin must be checked every 6 months - in some cases doctors can do it in a shorter lag.</p>
+<p>In the glucose graph pregnant woman must be taken from the analysis, since this test is part of the pre-natal care protocol.</p>
+<p><img src="blood_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p><img src="blood_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<ol start="7" style="list-style-type: decimal">
+<li>URINE ANALYSIS</li>
+</ol>
+<p><img src="blood_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<ol start="8" style="list-style-type: decimal">
+<li>The Thyroid Combo - TSH, T4, T4 and Free - T4</li>
+</ol>
+<p>Thyroid problems are commom problems in Primary Care, especially Hypothiroidsm, which affects *** patients. Three problems occur with this tests. The first one is the “combo” issue. During graduation young doctors usually learn that, when it is needed to investigate any Thyroid gland problem, it must be done by ordering the full “combo” of exams. For the most common thyroid problems though, TSH provides enough information about the gland.</p>
+<p>The second problem is the “follow up” issue. Patients with Hypothyroidism (the most frequent thyroid disease) have lower levels of THS and need to take medications for hormone replacement. At the time of the diagnosis TSH levels are usually high (that makes the diagnosis) and with the hormonal replacement those levels must come back to the normal range (0.4 - 4 mg/dL). Therefore, there must be a dose adjustment by checking the TSH levels after some weeks of treatment. At this moment, the “combo” is ordered and three useless tests are performed.</p>
+<p>The third problem is related to clinical reasoning skills to deal with patients with undiferentiated symptoms in Primary Care and it explains the differences between the rates. During graduation medical students learn that thyroid gland problems can produce a vast and vague spectrum of symptoms. During the Family Medicine training doctors learn comunication skills and patient centered clinical methods that help them to solve some of this diagnostic challenges, avoiding unnecessary TSH tests. With no special training it is hard to approach patients ideas, concerns and expectations about their illness and easily a generalist will follow the line learnt at medical school: “If you don’t know what your patient has, check the thyroid gland”.</p>
+<p>In the T3, T4 and Free-T4 graphs what is shown is not a behavioural change among generalist, but a prohibition from the Municipal Department of Health for Primary Care physicians to order this tests without consent from the medical director of the clinic. Even with this vertical intervention, Family Physicians still order less PSA than their generalists colleagues.</p>
+<p><img src="blood_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<p><img src="blood_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+<p><img src="blood_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+<p><img src="blood_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+<ol start="9" style="list-style-type: decimal">
+<li>PSA for Prostate Cancer Screening</li>
+</ol>
+<p>Prostate Cancer Screening is a big public health and political issue. Media and medical specialties insist on calling adult men to perform this test as an anual “check-up”, advising them that this “frequent” cancer is treatable and deaths by prostate cancer are avoidable. Public health experts and evidence based physicians advocate against this test, telling men to avoid it, showing the consequences of overdiagnosis. Family Medicine is one of the medical specialties concerned with having good evidence to offer any procedure for their patients.</p>
+<p>In the graph what is shown is not a behavioural change among generalist, but a prohibition from the Municipal Department of Health for Primary Care physicians to order this tests without consent from the medical director of the clinic. Even with this vertical intervention, Family Physicians still order less PSA than their generalists colleagues.</p>
+<p><img src="blood_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+</div>
+
+<!DOCTYPE HTML>
+<p>A Cost-effectiveness analysis of the Family Medicine Vocational trainning initiative for capacity building during the Rio de Janeiro Primary Health Care Reform</p>
+<br/>
+<br/>
+<p>Adelson Guaraci Jantsch</p>
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
