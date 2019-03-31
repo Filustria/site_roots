@@ -6,6 +6,8 @@ navbar:
       href: index.html
     - text: "Blood tests"
       href: blood.html
+    - text: "Drugs prescribed"
+      href: drugs.html
 output:
   html_document:
     theme: cosmo
