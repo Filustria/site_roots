@@ -84,15 +84,13 @@ references:
 setwd("G:\\extracao\\bancos_workspace")
 
 
-library(summarytools)
 library(tidyverse)
-library(lubridate)
 library(knitr)
 library(kableExtra)
-library(pander)
-library(DT)
 library(glue)
 library(arsenal)
+
+
 
 
 load('tudo_medicas.RData')

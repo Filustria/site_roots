@@ -11,6 +11,7 @@ load('s.RData')
 library(tidyverse)
 library(glue)
 
+
 ```
 
 This analysis aims to identify patterns of physicians clinical behaviour regarding some blood test commonly ordered by doctors dealing with ambulatory patients in Primary Care. The period of analysis comprises every medical consultation in ambulatory care from January 1st, 2013 to November 1st, 2018 made by every doctors that work (or worked) in one of the 30 Primary Care Clinics at the 'AP 31' district in Rio de Janeiro. The total number of consultations was 2.967.694 during the period of analysis, that is the same period of the inclusion of the Eletronic Medical Records in the city.
