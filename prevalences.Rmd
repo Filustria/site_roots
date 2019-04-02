@@ -1,83 +1,84 @@
 ---
-  # output: html_document
-  output:
+# output: html_document
+output:
   #bookdown::pdf_document2:
   #bookdown::word_document2:
   bookdown::html_document2:
-  toc: no
-pandoc_args: [
-  "--csl", "bmj.csl"
-  ]
+    toc: no
+    pandoc_args: [
+      "--csl", "bmj.csl"
+    ]
 bibliography: bibliography.bib
+
 
 references:
   
-  - id: elix1998
-title: "Comorbidity Measures for Use with Administrative Data"
-author:
+- id: elix1998
+  title: "Comorbidity Measures for Use with Administrative Data"
+  author:
   - family: Elixhauser
-given: Anne
-- family: Steiner
-given: Claudia
-- family: Harris
-given: Robert
-- family: Coffey
-given: Rosanna M.
-container-title: Medical Care
-volume: 36
-URL: 'https://doi.org/10.1097/00005650-199801000-00004'
-DOI: 10.1097/00005650-199801000-00004
-issue: 1
-publisher: Lippincott-Raven Publishers
-page: 8-27
-type: article-journal
-issued:
-  year: 1998
-month: 1
-
+    given: Anne
+  - family: Steiner
+    given: Claudia
+  - family: Harris
+    given: Robert
+  - family: Coffey
+    given: Rosanna M.
+  container-title: Medical Care
+  volume: 36
+  URL: 'https://doi.org/10.1097/00005650-199801000-00004'
+  DOI: 10.1097/00005650-199801000-00004
+  issue: 1
+  publisher: Lippincott-Raven Publishers
+  page: 8-27
+  type: article-journal
+  issued:
+    year: 1998
+    month: 1
+    
 - id: charlson1987
-title: "A New Method of Classifying Prognostic Comorbidity in Longitudinal Studies: Development and Validation."
-author:
+  title: "A New Method of Classifying Prognostic Comorbidity in Longitudinal Studies: Development and Validation."
+  author:
   - family: Charlson
-given: Mary E
-- family: Pompei
-given: Peter
-- family: Ales
-given: Kathy L
-- family: MacKenzie
-given: C Ronald
-container-title: Journal of Chronic Diseases
-volume: 40
-URL: 'https://doi.org/10.1016/0021-9681(87)90171-8'
-DOI: 10.1016/0021-9681(87)90171-8
-issue: 5
-publisher: Pergamon Journals Lid
-page: 373-83
-type: article-journal
-issued:
-  year: 1987
-month: 1
-
-
+    given: Mary E
+  - family: Pompei
+    given: Peter
+  - family: Ales
+    given: Kathy L
+  - family: MacKenzie
+    given: C Ronald
+  container-title: Journal of Chronic Diseases
+  volume: 40
+  URL: 'https://doi.org/10.1016/0021-9681(87)90171-8'
+  DOI: 10.1016/0021-9681(87)90171-8
+  issue: 5
+  publisher: Pergamon Journals Lid
+  page: 373-83
+  type: article-journal
+  issued:
+    year: 1987
+    month: 1
+   
+    
 - id: Gasparini2018
-title: "comorbidity: An R package for computing comorbidity scores."
-author:
+  title: "comorbidity: An R package for computing comorbidity scores."
+  author:
   - family: Gasparini
-given: Alessandro
-container-title: Journal of Open Source Software
-volume: 3
-URL: 'https://www.theoj.org/joss-papers/joss.00648/10.21105.joss.00648.pdf'
-DOI: 10.21105/joss.00648
-issue: 23
-publisher: Journal of Open Source Software
-page: 648
-type: article-journal
-issued:
-  year: 2018
-month: 1
-
+    given: Alessandro
+  container-title: Journal of Open Source Software
+  volume: 3
+  URL: 'https://www.theoj.org/joss-papers/joss.00648/10.21105.joss.00648.pdf'
+  DOI: 10.21105/joss.00648
+  issue: 23
+  publisher: Journal of Open Source Software
+  page: 648
+  type: article-journal
+  issued:
+    year: 2018
+    month: 1
+     
 ---
-  
+
 ```{r setup, include=FALSE}
 
 setwd("G:\\extracao\\bancos_workspace")
@@ -103,7 +104,7 @@ tudo$sex <- plyr::revalue(tudo$sex, c("F"="Female", "M"="Male"))
 
 ```
 
-# Chronic Health Conditions at the AP 3.1, Rio de Janeiro, measured with the Charlson and Elihauser indexes
+# Introduction
 
 This chapter explores the prevalences of chronic health conditions among 695.078 patients seen in the Primary Care (PC) clinics from 2013 to 2018. The diseases were selected from the Charlson [@charlson1987] and Elixhauser [@elix1998] Comorbidities indexes since they are the two main indexes studied in the literature related to in-patient deaths.
 
@@ -555,22 +556,22 @@ Hypertension (HBP) is the most common chronic condition measured in this cohort 
 ```{r table4, echo=FALSE, results="asis"}
 
 hasm <- tudo %>% select(sex, Age, iHAS) %>% filter(sex == 'Male') %>% group_by(Age) %>% summarise(Total = n(),
-Affected = sum(iHAS == 1),
-Prevalence = round(mean(iHAS)*100,2),
-sd = round(sd(iHAS),2))
+                                                                                                  Affected = sum(iHAS == 1),
+                                                                                                  Prevalence = round(mean(iHAS)*100,2),
+                                                                                                  sd = round(sd(iHAS),2))
 hasf <- tudo %>% select(sex, Age, iHAS) %>% filter(sex == 'Female') %>% group_by(Age) %>% summarise(Total = n(),
-Affected = sum(iHAS == 1),
-Prevalence = round(mean(iHAS)*100,2),
-sd = round(sd(iHAS),2))
+                                                                                                  Affected = sum(iHAS == 1),
+                                                                                                  Prevalence = round(mean(iHAS)*100,2),
+                                                                                                  sd = round(sd(iHAS),2))
 
 hasm <- mutate(hasm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
 hasf <- mutate(hasf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
 
 has <- cbind(hasm, hasf)
 kable(has, caption = "Table 4: Hypertension prevalence by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
-kable_styling(bootstrap_options = c("striped", "hover")) %>% 
-add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
-footnote(number = c("The ICD-10 codes considered here were `I10`", "Hypertension is listed only in the Elixhauser Comorbidity Index"))
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes considered here were `I10`", "Hypertension is listed only in the Elixhauser Comorbidity Index"))
 
 ```
 
@@ -578,9 +579,9 @@ footnote(number = c("The ICD-10 codes considered here were `I10`", "Hypertension
 ## Complications related to HBP
 
 HBP is a common condition but HBP related complications are not. Therefore, it is more likely that PC doctors miss to code this conditions in the patient's EMR. It is possible that this kind of low prevalent condition has been underdiagnosed in the study population, nonetheless, there is no difference in the prevalence among men and women. **Check for references for HBP related complications**   
-  
-  
-  The ICD-10 codes in this group are `I11.x, I12.x, I13.x and I15.x`, which represent renal or heart disease related to HBP and high blood pressure secondary to renalvascular or other endocrine diseases.
+
+
+The ICD-10 codes in this group are `I11.x, I12.x, I13.x and I15.x`, which represent renal or heart disease related to HBP and high blood pressure secondary to renalvascular or other endocrine diseases.
 
 
 ```{r table5, echo=FALSE, results="asis"}
@@ -611,7 +612,7 @@ HAScomplicada <- cbind(HAScomplicadam, HAScomplicadaf)
 kable(HAScomplicada, caption = "Table 5: Prevalence of complications related to HBP by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
   kable_styling(bootstrap_options = c("striped", "hover")) %>% 
   add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
-  footnote(number = c("The ICD-10 codes in this group are I11.x, I12.x, I13.x and I15.x", "Hypertension with complications is listed only in the Elixhauser Comorbidity Index"))
+  footnote(number = c("The ICD-10 codes in this group are `I11.x, I12.x, I13.x and I15.x`", "Hypertension with complications is listed only in the Elixhauser Comorbidity Index"))
 
 ```
 
@@ -1782,7 +1783,7 @@ kable(peptica, caption = "Table 34: Prevalence of Peptic ulcer disease (excludin
 
 
 ```
-
+   
 
 
 # Mild liver disease
@@ -1983,7 +1984,7 @@ kable(neoplasia, caption = "Table 39: Prevalence of Solid tumour without metasta
 
 
 ```        
-
+        
 
 # Metastatic cancer
 
