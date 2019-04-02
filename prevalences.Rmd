@@ -1,0 +1,2179 @@
+---
+  # output: html_document
+  output:
+  #bookdown::pdf_document2:
+  #bookdown::word_document2:
+  bookdown::html_document2:
+  toc: no
+pandoc_args: [
+  "--csl", "bmj.csl"
+  ]
+bibliography: bibliography.bib
+
+references:
+  
+  - id: elix1998
+title: "Comorbidity Measures for Use with Administrative Data"
+author:
+  - family: Elixhauser
+given: Anne
+- family: Steiner
+given: Claudia
+- family: Harris
+given: Robert
+- family: Coffey
+given: Rosanna M.
+container-title: Medical Care
+volume: 36
+URL: 'https://doi.org/10.1097/00005650-199801000-00004'
+DOI: 10.1097/00005650-199801000-00004
+issue: 1
+publisher: Lippincott-Raven Publishers
+page: 8-27
+type: article-journal
+issued:
+  year: 1998
+month: 1
+
+- id: charlson1987
+title: "A New Method of Classifying Prognostic Comorbidity in Longitudinal Studies: Development and Validation."
+author:
+  - family: Charlson
+given: Mary E
+- family: Pompei
+given: Peter
+- family: Ales
+given: Kathy L
+- family: MacKenzie
+given: C Ronald
+container-title: Journal of Chronic Diseases
+volume: 40
+URL: 'https://doi.org/10.1016/0021-9681(87)90171-8'
+DOI: 10.1016/0021-9681(87)90171-8
+issue: 5
+publisher: Pergamon Journals Lid
+page: 373-83
+type: article-journal
+issued:
+  year: 1987
+month: 1
+
+
+- id: Gasparini2018
+title: "comorbidity: An R package for computing comorbidity scores."
+author:
+  - family: Gasparini
+given: Alessandro
+container-title: Journal of Open Source Software
+volume: 3
+URL: 'https://www.theoj.org/joss-papers/joss.00648/10.21105.joss.00648.pdf'
+DOI: 10.21105/joss.00648
+issue: 23
+publisher: Journal of Open Source Software
+page: 648
+type: article-journal
+issued:
+  year: 2018
+month: 1
+
+---
+  
+```{r setup, include=FALSE}
+
+setwd("G:\\extracao\\bancos_workspace")
+
+
+library(summarytools)
+library(tidyverse)
+library(lubridate)
+library(knitr)
+library(kableExtra)
+library(pander)
+library(DT)
+library(glue)
+library(arsenal)
+
+
+load('tudo_medicas.RData')
+names(tudo)[names(tudo) == 'faixa_etaria'] <- 'Age'
+names(tudo)[names(tudo) == 'SEXO'] <- 'sex'
+tudo$sex <- plyr::revalue(tudo$sex, c("F"="Female", "M"="Male"))
+
+
+
+```
+
+# Chronic Health Conditions at the AP 3.1, Rio de Janeiro, measured with the Charlson and Elihauser indexes
+
+This chapter explores the prevalences of chronic health conditions among 695.078 patients seen in the Primary Care (PC) clinics from 2013 to 2018. The diseases were selected from the Charlson [@charlson1987] and Elixhauser [@elix1998] Comorbidities indexes since they are the two main indexes studied in the literature related to in-patient deaths.
+
+Each index has its own set of conditions and weights. The sets of conditions were taken from the orginial articles [-@charlson1987; -@elix1998] where they were first published and from the Comorbidity R package article [@Gasparini2018], where the author uses the same set of ICD-10 codes to build the indexes. 
+
+Each chronic condition will be presented here with its prevalence in the population studied and stratified by age and sex. The DT library will be used to present the data and at the end of this chapter information about Multimorbidity is presented. 
+
+
+
+# Population description
+
+In this study only patients that have had at least one medical consultation during the period studied were counted. 
+
+
+```{r table1a, echo=FALSE, results="asis"}
+
+tab1a <- tableby(sex ~ Age, data=tudo, test=FALSE, numeric.stats=c("countcellpct"))
+summary(tab1a, title = "Table 1: Age-group distribution by gender in Rio de Janeiro by Age, 2018")
+
+ggplot(tudo, aes(x=sex, y=idade, color=sex)) + 
+  geom_violin()
+```
+
+
+
+```{r morbidades, echo = FALSE}
+
+tudo %>% 
+  group_by(sex) %>%
+  select(Age, idade, sex, iHAS, iHAScomplicada, idislipidemia, iobesidade, ianemia, ianemia_def, ialcool, idrogas, 
+         ipsicoses, idepre, ihipoT, iarritmia, ieletrolitos, icomsump, icoagulo, ireumatismo_elix, ivalvular, icirc_pulm, 
+         ineuro, iCI, iICC, ivascular_periferica, iAVC, idemencia, iDPOC, ireumatismo_charlson, ipeptica, imild_liver, 
+         iDMOK, iDMcomplica, iplegia, iIRC, ineoplasia, isevere_liver, imetastase, iSIDA, ilinfoma, ileucemia, iliver, 
+         itabaco) %>%
+  summarise(N = n(),
+            HAS = sum(iHAS == 1),
+            HAScomplicada = sum(iHAScomplicada == 1),
+            DMOK = sum(iDMOK == 1),
+            DMcomplica = sum(iDMcomplica == 1),
+            dislipidemia = sum(idislipidemia == 1),
+            obesidade = sum(iobesidade == 1),
+            tabagismo = sum(itabaco == 1),
+            CI = sum(iCI == 1),
+            ICC = sum(iICC == 1), 
+            IRC = sum(iIRC == 1),
+            arritmia = sum(iarritmia == 1),
+            vascular_periferica = sum(ivascular_periferica == 1),
+            coagulo = sum(icoagulo == 1),
+            valvular = sum(ivalvular == 1),
+            circ_pulm = sum(icirc_pulm == 1),
+            anemia = sum(ianemia == 1),
+            anemia_def = sum(ianemia_def == 1),
+            alcool = sum(ialcool == 1),
+            drogas = sum(idrogas == 1),
+            psicoses = sum(ipsicoses == 1),
+            depre = sum(idepre == 1),
+            hipoT = sum(ihipoT == 1),
+            eletrolitos = sum(ieletrolitos == 1),
+            reumatismo_elix = sum(ireumatismo_elix == 1),
+            reumatismo_charlson = sum(ireumatismo_charlson == 1),
+            neuro = sum(ineuro == 1),
+            AVC = sum(iAVC == 1),
+            demencia = sum(idemencia == 1),
+            plegia = sum(iplegia == 1),
+            DPOC = sum(iDPOC == 1),
+            peptica = sum(ipeptica == 1),
+            mild_liver = sum(imild_liver == 1),
+            severe_liver = sum(isevere_liver == 1),
+            liver = sum(iliver == 1),
+            comsump = sum(icomsump == 1),
+            neoplasia = sum(ineoplasia == 1),
+            metastase = sum(imetastase == 1),
+            linfoma = sum(ilinfoma == 1),
+            leucemia = sum(ileucemia == 1),
+            SIDA = sum(iSIDA == 1)) -> tm
+
+tm <- tm %>% mutate_if(is.numeric, ~round(., 2))
+tm <- data.table::transpose(tm)
+tm <- tm[3:42,]
+
+
+tudo %>% 
+  group_by(sex) %>%
+  select(Age, idade, sex, iHAS, iHAScomplicada, idislipidemia, iobesidade, ianemia, ianemia_def, ialcool, idrogas, 
+         ipsicoses, idepre, ihipoT, iarritmia, ieletrolitos, icomsump, icoagulo, ireumatismo_elix, ivalvular, icirc_pulm, 
+         ineuro, iCI, iICC, ivascular_periferica, iAVC, idemencia, iDPOC, ireumatismo_charlson, ipeptica, imild_liver, 
+         iDMOK, iDMcomplica, iplegia, iIRC, ineoplasia, isevere_liver, imetastase, iSIDA, ilinfoma, ileucemia, iliver, 
+         itabaco) %>%
+  summarise(N = n(),
+            HAS = round(mean(iHAS)*100, 2),
+            HAScomplicada = round(mean(iHAScomplicada)*100, 2),
+            DMOK = round(mean(iDMOK)*100, 2),
+            DMcomplica = round(mean(iDMcomplica)*100, 2),
+            dislipidemia = round(mean(idislipidemia)*100, 2),
+            obesidade = round(mean(iobesidade)*100, 2),
+            tabagismo = round(mean(itabaco)*100, 2),
+            CI = round(mean(iCI)*100, 2),
+            ICC = round(mean(iICC)*100, 2), 
+            IRC = round(mean(iIRC)*100, 2),
+            arritmia = round(mean(iarritmia)*100, 2),
+            vascular_periferica = round(mean(ivascular_periferica)*100, 2),
+            coagulo = round(mean(icoagulo)*100, 2),
+            valvular = round(mean(ivalvular)*100, 2),
+            circ_pulm = round(mean(icirc_pulm)*100, 2),
+            anemia = round(mean(ianemia)*100, 2),
+            anemia_def = round(mean(ianemia_def)*100, 2),
+            alcool = round(mean(ialcool)*100, 2),
+            drogas = round(mean(idrogas)*100, 2),
+            psicoses = round(mean(ipsicoses)*100, 2),
+            depre = round(mean(idepre)*100, 2),
+            hipoT = round(mean(ihipoT)*100, 2),
+            eletrolitos = round(mean(ieletrolitos)*100, 2),
+            reumatismo_elix = round(mean(ireumatismo_elix)*100, 2),
+            reumatismo_charlson = round(mean(ireumatismo_charlson)*100, 2),
+            neuro = round(mean(ineuro)*100, 2),
+            AVC = round(mean(iAVC)*100, 2),
+            demencia = round(mean(idemencia)*100, 2),
+            plegia = round(mean(iplegia)*100, 2),
+            DPOC = round(mean(iDPOC)*100, 2),
+            peptica = round(mean(ipeptica)*100, 2),
+            mild_liver = round(mean(imild_liver)*100, 2),
+            severe_liver = round(mean(isevere_liver)*100, 2),
+            liver = round(mean(iliver)*100, 2),
+            comsump = round(mean(icomsump)*100, 2),
+            neoplasia = round(mean(ineoplasia)*100, 2),
+            metastase = round(mean(imetastase)*100, 2),
+            linfoma = round(mean(ilinfoma)*100, 2),
+            leucemia = round(mean(ileucemia)*100, 2),
+            SIDA = round(mean(iSIDA)*100, 2)) -> pm
+
+pm <- pm %>% mutate_if(is.numeric, ~round(., 2))
+pm <- data.table::transpose(pm)
+pm <- pm[3:42,]
+
+
+tudo %>% 
+  group_by(sex) %>%
+  select(Age, idade, sex, iHAS, iHAScomplicada, idislipidemia, iobesidade, ianemia, ianemia_def, ialcool, idrogas, 
+         ipsicoses, idepre, ihipoT, iarritmia, ieletrolitos, icomsump, icoagulo, ireumatismo_elix, ivalvular, icirc_pulm, 
+         ineuro, iCI, iICC, ivascular_periferica, iAVC, idemencia, iDPOC, ireumatismo_charlson, ipeptica, imild_liver, 
+         iDMOK, iDMcomplica, iplegia, iIRC, ineoplasia, isevere_liver, imetastase, iSIDA, ilinfoma, ileucemia, iliver, 
+         itabaco) %>%
+  summarise(N = n(),
+            HAS = sd(iHAS == 1),
+            HAScomplicada = sd(iHAScomplicada == 1),
+            DMOK = sd(iDMOK == 1),
+            DMcomplica = sd(iDMcomplica == 1),
+            dislipidemia = sd(idislipidemia == 1),
+            obesidade = sd(iobesidade == 1),
+            tabagismo = sd(itabaco == 1),
+            CI = sd(iCI == 1),
+            ICC = sd(iICC == 1), 
+            IRC = sd(iIRC == 1),
+            arritmia = sd(iarritmia == 1),
+            vascular_periferica = sd(ivascular_periferica == 1),
+            coagulo = sd(icoagulo == 1),
+            valvular = sd(ivalvular == 1),
+            circ_pulm = sd(icirc_pulm == 1),
+            anemia = sd(ianemia == 1),
+            anemia_def = sd(ianemia_def == 1),
+            alcool = sd(ialcool == 1),
+            drogas = sd(idrogas == 1),
+            psicoses = sd(ipsicoses == 1),
+            depre = sd(idepre == 1),
+            hipoT = sd(ihipoT == 1),
+            eletrolitos = sd(ieletrolitos == 1),
+            reumatismo_elix = sd(ireumatismo_elix == 1),
+            reumatismo_charlson = sd(ireumatismo_charlson == 1),
+            neuro = sd(ineuro == 1),
+            AVC = sd(iAVC == 1),
+            demencia = sd(idemencia == 1),
+            plegia = sd(iplegia == 1),
+            DPOC = sd(iDPOC == 1),
+            peptica = sd(ipeptica == 1),
+            mild_liver = sd(imild_liver == 1),
+            severe_liver = sd(isevere_liver == 1),
+            liver = sd(iliver == 1),
+            comsump = sd(icomsump == 1),
+            neoplasia = sd(ineoplasia == 1),
+            metastase = sd(imetastase == 1),
+            linfoma = sd(ilinfoma == 1),
+            leucemia = sd(ileucemia == 1),
+            SIDA = sd(iSIDA == 1)) -> sdm
+
+sdm <- sdm %>% mutate_if(is.numeric, ~round(., 2))
+sdm <- data.table::transpose(sdm)
+sdm <- sdm[3:42,]
+
+
+
+Morbidities <- c("Hypertension","Complications related to Hypertension", "Diabetes without chronic complication",
+                 "Diabetes with chronic complication", "Dyslipidemia", "Obesity", "Tobbaco use","Myocardial infarction",
+                 "Congestive heart failure","Renal failure", "Cardiac arrhythmias", "Peripheral vascular disorders",
+                 "Coagulopathy","Valvular disease","Pulmonary circulation disorders", 
+                 "Blood loss anaemia","Iron deficiency anemia", "Alcohol Abuse",
+                 "Illicit drug abuse", "Psychosis", "Depression", "Hypothiroidism", 
+                 "Fluid and electrolyte disorders", "Rheumatoid arthritis/collagen vascular diseases (Elixhauser Index)",
+                 "Rheumatic disease (Charlson Index)", "Other neurological disorders", "Cerebrovascular disease",
+                 "Dementia", "Paralysis", "Chronic pulmonary disease", "Peptic ulcer disease, excluding bleeding",
+                 "Mild liver disease", "Severe liver disease", "Liver cirrhosis", "Weight loss","Solid tumour without metastasis",   
+                 "Metastatic cancer", "Lymphoma", "Leukemia", "AIDS/HIV")
+
+
+
+prevalencias <- cbind(Morbidities, tm[1],pm[1],sdm[1], tm[2],pm[2],sdm[2])
+
+
+names(prevalencias)[1]<-paste("Morbidities")
+names(prevalencias)[2]<-paste("Number of cases")
+names(prevalencias)[3]<-paste("Prevalence")
+names(prevalencias)[4]<-paste("SD")
+names(prevalencias)[5]<-paste("Number of cases")
+names(prevalencias)[6]<-paste("Prevalence")
+names(prevalencias)[7]<-paste("SD")
+rownames(prevalencias) <- c()
+```
+
+
+# Prevalence in the general population
+
+
+```{r}
+
+# has <- cbind(hasm, hasf[2:3])
+kable(prevalencias, caption = "Table 2: ") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Female (N = 343.433)" = 3, "Male (N = 238.487)" = 3))
+```
+
+
+
+```{r adultos, echo = FALSE}
+
+adultos <- tudo %>% filter(Age != "< 18")
+
+adultos %>% 
+  group_by(sex) %>%
+  select(Age, idade, sex, iHAS, iHAScomplicada, idislipidemia, iobesidade, ianemia, ianemia_def, ialcool, idrogas, 
+         ipsicoses, idepre, ihipoT, iarritmia, ieletrolitos, icomsump, icoagulo, ireumatismo_elix, ivalvular, icirc_pulm, 
+         ineuro, iCI, iICC, ivascular_periferica, iAVC, idemencia, iDPOC, ireumatismo_charlson, ipeptica, imild_liver, 
+         iDMOK, iDMcomplica, iplegia, iIRC, ineoplasia, isevere_liver, imetastase, iSIDA, ilinfoma, ileucemia, iliver, 
+         itabaco) %>%
+  summarise(N = n(),
+            HAS = sum(iHAS == 1),
+            HAScomplicada = sum(iHAScomplicada == 1),
+            DMOK = sum(iDMOK == 1),
+            DMcomplica = sum(iDMcomplica == 1),
+            dislipidemia = sum(idislipidemia == 1),
+            obesidade = sum(iobesidade == 1),
+            tabagismo = sum(itabaco == 1),
+            CI = sum(iCI == 1),
+            ICC = sum(iICC == 1), 
+            IRC = sum(iIRC == 1),
+            arritmia = sum(iarritmia == 1),
+            vascular_periferica = sum(ivascular_periferica == 1),
+            coagulo = sum(icoagulo == 1),
+            valvular = sum(ivalvular == 1),
+            circ_pulm = sum(icirc_pulm == 1),
+            anemia = sum(ianemia == 1),
+            anemia_def = sum(ianemia_def == 1),
+            alcool = sum(ialcool == 1),
+            drogas = sum(idrogas == 1),
+            psicoses = sum(ipsicoses == 1),
+            depre = sum(idepre == 1),
+            hipoT = sum(ihipoT == 1),
+            eletrolitos = sum(ieletrolitos == 1),
+            reumatismo_elix = sum(ireumatismo_elix == 1),
+            reumatismo_charlson = sum(ireumatismo_charlson == 1),
+            neuro = sum(ineuro == 1),
+            AVC = sum(iAVC == 1),
+            demencia = sum(idemencia == 1),
+            plegia = sum(iplegia == 1),
+            DPOC = sum(iDPOC == 1),
+            peptica = sum(ipeptica == 1),
+            mild_liver = sum(imild_liver == 1),
+            severe_liver = sum(isevere_liver == 1),
+            liver = sum(iliver == 1),
+            comsump = sum(icomsump == 1),
+            neoplasia = sum(ineoplasia == 1),
+            metastase = sum(imetastase == 1),
+            linfoma = sum(ilinfoma == 1),
+            leucemia = sum(ileucemia == 1),
+            SIDA = sum(iSIDA == 1)) -> adultostm
+
+adultostm <- adultostm %>% mutate_if(is.numeric, ~round(., 2))
+adultostm <- data.table::transpose(adultostm)
+adultostm <- adultostm[3:42,]
+
+
+adultos %>% 
+  group_by(sex) %>%
+  select(Age, idade, sex, iHAS, iHAScomplicada, idislipidemia, iobesidade, ianemia, ianemia_def, ialcool, idrogas, 
+         ipsicoses, idepre, ihipoT, iarritmia, ieletrolitos, icomsump, icoagulo, ireumatismo_elix, ivalvular, icirc_pulm, 
+         ineuro, iCI, iICC, ivascular_periferica, iAVC, idemencia, iDPOC, ireumatismo_charlson, ipeptica, imild_liver, 
+         iDMOK, iDMcomplica, iplegia, iIRC, ineoplasia, isevere_liver, imetastase, iSIDA, ilinfoma, ileucemia, iliver, 
+         itabaco) %>%
+  summarise(N = n(),
+            HAS = round(mean(iHAS)*100, 2),
+            HAScomplicada = round(mean(iHAScomplicada)*100, 2),
+            DMOK = round(mean(iDMOK)*100, 2),
+            DMcomplica = round(mean(iDMcomplica)*100, 2),
+            dislipidemia = round(mean(idislipidemia)*100, 2),
+            obesidade = round(mean(iobesidade)*100, 2),
+            tabagismo = round(mean(itabaco)*100, 2),
+            CI = round(mean(iCI)*100, 2),
+            ICC = round(mean(iICC)*100, 2), 
+            IRC = round(mean(iIRC)*100, 2),
+            arritmia = round(mean(iarritmia)*100, 2),
+            vascular_periferica = round(mean(ivascular_periferica)*100, 2),
+            coagulo = round(mean(icoagulo)*100, 2),
+            valvular = round(mean(ivalvular)*100, 2),
+            circ_pulm = round(mean(icirc_pulm)*100, 2),
+            anemia = round(mean(ianemia)*100, 2),
+            anemia_def = round(mean(ianemia_def)*100, 2),
+            alcool = round(mean(ialcool)*100, 2),
+            drogas = round(mean(idrogas)*100, 2),
+            psicoses = round(mean(ipsicoses)*100, 2),
+            depre = round(mean(idepre)*100, 2),
+            hipoT = round(mean(ihipoT)*100, 2),
+            eletrolitos = round(mean(ieletrolitos)*100, 2),
+            reumatismo_elix = round(mean(ireumatismo_elix)*100, 2),
+            reumatismo_charlson = round(mean(ireumatismo_charlson)*100, 2),
+            neuro = round(mean(ineuro)*100, 2),
+            AVC = round(mean(iAVC)*100, 2),
+            demencia = round(mean(idemencia)*100, 2),
+            plegia = round(mean(iplegia)*100, 2),
+            DPOC = round(mean(iDPOC)*100, 2),
+            peptica = round(mean(ipeptica)*100, 2),
+            mild_liver = round(mean(imild_liver)*100, 2),
+            severe_liver = round(mean(isevere_liver)*100, 2),
+            liver = round(mean(iliver)*100, 2),
+            comsump = round(mean(icomsump)*100, 2),
+            neoplasia = round(mean(ineoplasia)*100, 2),
+            metastase = round(mean(imetastase)*100, 2),
+            linfoma = round(mean(ilinfoma)*100, 2),
+            leucemia = round(mean(ileucemia)*100, 2),
+            SIDA = round(mean(iSIDA)*100, 2)) -> adultospm
+
+adultospm <- adultospm %>% mutate_if(is.numeric, ~round(., 2))
+adultospm <- data.table::transpose(adultospm)
+adultospm <- adultospm[3:42,]
+
+
+adultos %>% 
+  group_by(sex) %>%
+  select(Age, idade, sex, iHAS, iHAScomplicada, idislipidemia, iobesidade, ianemia, ianemia_def, ialcool, idrogas, 
+         ipsicoses, idepre, ihipoT, iarritmia, ieletrolitos, icomsump, icoagulo, ireumatismo_elix, ivalvular, icirc_pulm, 
+         ineuro, iCI, iICC, ivascular_periferica, iAVC, idemencia, iDPOC, ireumatismo_charlson, ipeptica, imild_liver, 
+         iDMOK, iDMcomplica, iplegia, iIRC, ineoplasia, isevere_liver, imetastase, iSIDA, ilinfoma, ileucemia, iliver, 
+         itabaco) %>%
+  summarise(N = n(),
+            HAS = sd(iHAS == 1),
+            HAScomplicada = sd(iHAScomplicada == 1),
+            DMOK = sd(iDMOK == 1),
+            DMcomplica = sd(iDMcomplica == 1),
+            dislipidemia = sd(idislipidemia == 1),
+            obesidade = sd(iobesidade == 1),
+            tabagismo = sd(itabaco == 1),
+            CI = sd(iCI == 1),
+            ICC = sd(iICC == 1), 
+            IRC = sd(iIRC == 1),
+            arritmia = sd(iarritmia == 1),
+            vascular_periferica = sd(ivascular_periferica == 1),
+            coagulo = sd(icoagulo == 1),
+            valvular = sd(ivalvular == 1),
+            circ_pulm = sd(icirc_pulm == 1),
+            anemia = sd(ianemia == 1),
+            anemia_def = sd(ianemia_def == 1),
+            alcool = sd(ialcool == 1),
+            drogas = sd(idrogas == 1),
+            psicoses = sd(ipsicoses == 1),
+            depre = sd(idepre == 1),
+            hipoT = sd(ihipoT == 1),
+            eletrolitos = sd(ieletrolitos == 1),
+            reumatismo_elix = sd(ireumatismo_elix == 1),
+            reumatismo_charlson = sd(ireumatismo_charlson == 1),
+            neuro = sd(ineuro == 1),
+            AVC = sd(iAVC == 1),
+            demencia = sd(idemencia == 1),
+            plegia = sd(iplegia == 1),
+            DPOC = sd(iDPOC == 1),
+            peptica = sd(ipeptica == 1),
+            mild_liver = sd(imild_liver == 1),
+            severe_liver = sd(isevere_liver == 1),
+            liver = sd(iliver == 1),
+            comsump = sd(icomsump == 1),
+            neoplasia = sd(ineoplasia == 1),
+            metastase = sd(imetastase == 1),
+            linfoma = sd(ilinfoma == 1),
+            leucemia = sd(ileucemia == 1),
+            SIDA = sd(iSIDA == 1)) -> adultossdm
+
+adultossdm <- adultossdm %>% mutate_if(is.numeric, ~round(., 2))
+adultossdm <- data.table::transpose(adultossdm)
+adultossdm <- adultossdm[3:42,]
+
+
+
+Morbidities <- c("Hypertension","Complications related to Hypertension", "Diabetes without chronic complication",
+                 "Diabetes with chronic complication", "Dyslipidemia", "Obesity", "Tobbaco use","Myocardial infarction",
+                 "Congestive heart failure","Renal failure", "Cardiac arrhythmias", "Peripheral vascular disorders",
+                 "Coagulopathy","Valvular disease","Pulmonary circulation disorders", 
+                 "Blood loss anaemia","Iron deficiency anemia", "Alcohol Abuse",
+                 "Illicit drug abuse", "Psychosis", "Depression", "Hypothiroidism", 
+                 "Fluid and electrolyte disorders", "Rheumatoid arthritis/collagen vascular diseases (Elixhauser Index)",
+                 "Rheumatic disease (Charlson Index)", "Other neurological disorders", "Cerebrovascular disease",
+                 "Dementia", "Paralysis", "Chronic pulmonary disease", "Peptic ulcer disease, excluding bleeding",
+                 "Mild liver disease", "Severe liver disease", "Liver cirrhosis", "Weight loss","Solid tumour without metastasis",   
+                 "Metastatic cancer", "Lymphoma", "Leukemia", "AIDS/HIV")
+
+
+
+prevalencias_adultos <- cbind(Morbidities, adultostm[1],adultospm[1],adultossdm[1], adultostm[2],adultospm[2],adultossdm[2])
+
+
+names(prevalencias_adultos)[1]<-paste("Morbidities")
+names(prevalencias_adultos)[2]<-paste("Number of cases")
+names(prevalencias_adultos)[3]<-paste("Prevalence")
+names(prevalencias_adultos)[4]<-paste("SD")
+names(prevalencias_adultos)[5]<-paste("Number of cases")
+names(prevalencias_adultos)[6]<-paste("Prevalence")
+names(prevalencias_adultos)[7]<-paste("SD")
+rownames(prevalencias_adultos) <- c()
+```
+
+
+# Prevalence in the adult population
+
+Here we considered only patient older than 18 years-old. 149.236 patients were withdrawn from the sample. 
+
+
+```{r prevalencias_adultos}
+
+kable(prevalencias_adultos, caption = "Table 3:") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Female (N = 268.619)" = 3, "Male (N = 164.065)" = 3))
+```
+
+
+
+# Hypertension and related complications
+
+## Hypertension (HBP)
+
+Hypertension (HBP) is the most common chronic condition measured in this cohort of patients, with more than 50% of prevalence among those patients treated in PC clinics and it's more prevalent among women than men in every age stages. The codes for HBP is `I10.x` and it has been considered only at the Elixhauser Index.
+
+
+
+```{r table4, echo=FALSE, results="asis"}
+
+hasm <- tudo %>% select(sex, Age, iHAS) %>% filter(sex == 'Male') %>% group_by(Age) %>% summarise(Total = n(),
+Affected = sum(iHAS == 1),
+Prevalence = round(mean(iHAS)*100,2),
+sd = round(sd(iHAS),2))
+hasf <- tudo %>% select(sex, Age, iHAS) %>% filter(sex == 'Female') %>% group_by(Age) %>% summarise(Total = n(),
+Affected = sum(iHAS == 1),
+Prevalence = round(mean(iHAS)*100,2),
+sd = round(sd(iHAS),2))
+
+hasm <- mutate(hasm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+hasf <- mutate(hasf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+has <- cbind(hasm, hasf)
+kable(has, caption = "Table 4: Hypertension prevalence by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+footnote(number = c("The ICD-10 codes considered here were `I10`", "Hypertension is listed only in the Elixhauser Comorbidity Index"))
+
+```
+
+
+## Complications related to HBP
+
+HBP is a common condition but HBP related complications are not. Therefore, it is more likely that PC doctors miss to code this conditions in the patient's EMR. It is possible that this kind of low prevalent condition has been underdiagnosed in the study population, nonetheless, there is no difference in the prevalence among men and women. **Check for references for HBP related complications**   
+  
+  
+  The ICD-10 codes in this group are `I11.x, I12.x, I13.x and I15.x`, which represent renal or heart disease related to HBP and high blood pressure secondary to renalvascular or other endocrine diseases.
+
+
+```{r table5, echo=FALSE, results="asis"}
+
+HAScomplicadam <- tudo %>% 
+  select(sex, Age, iHAScomplicada) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iHAScomplicada == 1),
+            Prevalence = round(mean(iHAScomplicada)*100,2),
+            sd = round(sd(iHAScomplicada),2))
+
+HAScomplicadaf <- tudo %>% 
+  select(sex, Age, iHAScomplicada) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iHAScomplicada == 1),
+            Prevalence = round(mean(iHAScomplicada)*100,2),
+            sd = round(sd(iHAScomplicada),2))
+
+
+HAScomplicadam <- mutate(HAScomplicadam, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+HAScomplicadaf <- mutate(HAScomplicadaf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+HAScomplicada <- cbind(HAScomplicadam, HAScomplicadaf)
+kable(HAScomplicada, caption = "Table 5: Prevalence of complications related to HBP by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes in this group are I11.x, I12.x, I13.x and I15.x", "Hypertension with complications is listed only in the Elixhauser Comorbidity Index"))
+
+```
+
+# Diabetes Mellitus
+
+## Diabetes without chronic complication
+
+The ICD-10 codes are E10.0, E10.1, E10.6, E10.8, E10.9, E11.0, E11.1, E11.6, E11.8, E11.9, E12.0, E12.1, E12.6, E12.8, E12.9, E13.0, E13.1, E13.6, E13.8, E13.9, E14.0, E14.1, E14.6, E14.8, E14.9
+
+
+```{r table6, echo=FALSE, results="asis"}
+
+DMOKm <- tudo %>% 
+  select(sex, Age, iDMOK) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iDMOK == 1),
+            Prevalence = round(mean(iDMOK)*100,2),
+            sd = round(sd(iDMOK),2))
+
+DMOKf <- tudo %>% 
+  select(sex, Age, iDMOK) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iDMOK == 1),
+            Prevalence = round(mean(iDMOK)*100,2),
+            sd = round(sd(iDMOK),2))
+
+
+DMOKm <- mutate(DMOKm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+DMOKf <- mutate(DMOKf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+DMOK <- cbind(DMOKm, DMOKf)
+kable(DMOK, caption = "Table 6: Prevalence of Diabetes without chronic complication by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are E10.0, E10.1, E10.6, E10.8, E10.9, E11.0, E11.1, E11.6, E11.8, E11.9, E12.0, E12.1, E12.6, E12.8, E12.9, E13.0, E13.1, E13.6, E13.8, E13.9, E14.0, E14.1, E14.6, E14.8, E14.9", "Diabetes without chronic complication is present at both Charlson and Elixhauser Comorbidity Indexes"))
+
+```
+
+
+## Diabetes with chronic complications
+
+The ICD-10 codes are E10.2 - E10.5, E10.7, E11.2 - E11.5, E11.7, E12.2 - E12.5, E12.7, E13.2 - E13.5, E13.7, E14.2 - E14.5, E14.7
+
+```{r table7, echo=FALSE, results="asis"}
+
+
+DMcomplicam <- tudo %>% 
+  select(sex, Age, iDMcomplica) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iDMcomplica == 1),
+            Prevalence = round(mean(iDMcomplica)*100,2),
+            sd = round(sd(iDMcomplica),2))
+
+DMcomplicaf <- tudo %>% 
+  select(sex, Age, iDMcomplica) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iDMcomplica == 1),
+            Prevalence = round(mean(iDMcomplica)*100,2),
+            sd = round(sd(iDMcomplica),2))
+
+
+DMcomplicam <- mutate(DMcomplicam, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+DMcomplicaf <- mutate(DMcomplicaf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+DMcomplica <- cbind(DMcomplicam, DMcomplicaf)
+kable(DMcomplica, caption = "Table 7: Prevalence of Diabetes with chronic complication by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are E10.2 - E10.5, E10.7, E11.2 - E11.5, E11.7, E12.2 - E12.5, E12.7, E13.2 - E13.5, E13.7, E14.2 - E14.5, E14.7", "Diabetes with chronic complication is present at both Charlson and Elixhauser Comorbidity Indexes"))
+
+
+```
+
+
+# Dyslipidemia
+
+The ICD-10 codes are `E78`.
+
+```{r table8, echo=FALSE, results="asis"}
+
+
+dislipidemiam <- tudo %>% 
+  select(sex, Age, idislipidemia) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(idislipidemia == 1),
+            Prevalence = round(mean(idislipidemia)*100,2),
+            sd = round(sd(idislipidemia),2))
+
+dislipidemiaf <- tudo %>% 
+  select(sex, Age, idislipidemia) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(idislipidemia == 1),
+            Prevalence = round(mean(idislipidemia)*100,2),
+            sd = round(sd(idislipidemia),2))
+
+
+dislipidemiam <- mutate(dislipidemiam, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+dislipidemiaf <- mutate(dislipidemiaf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+dislipidemia <- cbind(dislipidemiam, dislipidemiaf)
+kable(dislipidemia, caption = "Table 8: Prevalence of Dyslipidemia by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `E78`.", "Dyslipidemia is present at both Charlson and Elixhauser Comorbidity Indexes"))
+
+
+
+```
+
+
+
+# Obesity
+
+The ICD-10 codes are `E66`.
+
+```{r table9, echo=FALSE, results="asis"}
+
+
+
+obesidadem <- tudo %>% 
+  select(sex, Age, iobesidade) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iobesidade == 1),
+            Prevalence = round(mean(iobesidade)*100,2),
+            sd = round(sd(iobesidade),2))
+
+obesidadef <- tudo %>% 
+  select(sex, Age, iobesidade) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iobesidade == 1),
+            Prevalence = round(mean(iobesidade)*100,2),
+            sd = round(sd(iobesidade),2))
+
+
+obesidadem <- mutate(obesidadem, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+obesidadef <- mutate(obesidadef, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+obesidade <- cbind(obesidadem, obesidadef)
+kable(obesidade, caption = "Table 9: Prevalence of Obesity by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `E66`.", "Obesity is present only at the Elixhauser Comorbidity Indexes"))
+
+```
+
+
+
+
+# Tobbaco use
+
+The ICD-10 codes are `B20.x - B22.x, B24.x`. Present in both Indexes.
+
+
+```{r table10, echo=FALSE, results="asis"}
+
+tabacom <- tudo %>% 
+  select(sex, Age, itabaco) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(itabaco == 1),
+            Prevalence = round(mean(itabaco)*100,2),
+            sd = round(sd(itabaco),2))
+
+tabacof <- tudo %>% 
+  select(sex, Age, itabaco) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(itabaco == 1),
+            Prevalence = round(mean(itabaco)*100,2),
+            sd = round(sd(itabaco),2))
+
+
+tabacom <- mutate(tabacom, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+tabacof <- mutate(tabacof, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+tabaco <- cbind(tabacom, tabacof)
+kable(tabaco, caption = "Table 10: Prevalence of Tobbaco use by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `B20.x - B22.x, B24.x`", "Tobbaco use is not present in any Comorbidity Indexes"))
+
+
+```
+
+
+
+# Myocardial infarction
+
+The ICD-10 codes are `I21.x, I22.x, I25.2`. Only present in the Charlson Index.  
+
+
+
+```{r table11, echo=FALSE, results="asis"}
+
+
+CIm <- tudo %>% 
+  select(sex, Age, iCI) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iCI == 1),
+            Prevalence = round(mean(iCI)*100,2),
+            sd = round(sd(iCI),2))
+
+CIf <- tudo %>% 
+  select(sex, Age, iCI) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iCI == 1),
+            Prevalence = round(mean(iCI)*100,2),
+            sd = round(sd(iCI),2))
+
+
+CIm <- mutate(CIm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+CIf <- mutate(CIf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+CI <- cbind(CIm, CIf)
+kable(CI, caption = "Table 11: Prevalence of Myocardial infarction by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `I21.x, I22.x, I25.2`", "Myocardial infarction is only present in the Charlson Index"))
+
+
+
+```
+
+
+# Congestive heart failure
+
+The ICD-10 codes are `I09.9, I11.0, I13.0, I13.2, I25.5, I42.0, I42.5 - I42.9, I43.x, I50.x, P29.0`. Present in both Indexes.  
+
+
+
+```{r table12, echo=FALSE, results="asis"}
+
+ICCm <- tudo %>% 
+  select(sex, Age, iICC) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iICC == 1),
+            Prevalence = round(mean(iICC)*100,2),
+            sd = round(sd(iICC),2))
+
+ICCf <- tudo %>% 
+  select(sex, Age, iICC) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iICC == 1),
+            Prevalence = round(mean(iICC)*100,2),
+            sd = round(sd(iICC),2))
+
+
+ICCm <- mutate(ICCm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+ICCf <- mutate(ICCf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+ICC <- cbind(ICCm, ICCf)
+kable(ICC, caption = "Table 12: Prevalence of Congestive heart failure by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `I09.9, I11.0, I13.0, I13.2, I25.5, I42.0, I42.5 - I42.9, I43.x, I50.x, P29.0`", "Congestive heart failure is present at both Charlson and Elixhauser Comorbidity Indexes"))
+
+
+```
+
+
+
+
+# Renal failure
+
+The ICD-10 codes are `G04.1, G11.4, G80.1, G80.2, G81.x, G82.x, G83.0 - G83.4, G83.9`. Present in both Indexes.
+
+
+```{r table13, echo=FALSE, results="asis"}
+
+IRCm <- tudo %>% 
+  select(sex, Age, iIRC) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iIRC == 1),
+            Prevalence = round(mean(iIRC)*100,2),
+            sd = round(sd(iIRC),2))
+
+IRCf <- tudo %>% 
+  select(sex, Age, iIRC) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iIRC == 1),
+            Prevalence = round(mean(iIRC)*100,2),
+            sd = round(sd(iIRC),2))
+
+
+IRCm <- mutate(IRCm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+IRCf <- mutate(IRCf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+IRC <- cbind(IRCm, IRCf)
+kable(IRC, caption = "Table 13: Prevalence of Renal failure by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `G04.1, G11.4, G80.1, G80.2, G81.x, G82.x, G83.0 - G83.4, G83.9`", "Renal failure is present at both Charlson and Elixhauser Comorbidity Indexes"))
+
+
+```
+
+
+# Cardiac arrhythmias
+
+The ICD-10 codes are ` I44.1 - I44.3, I45.6, I45.9, I47.x - I49.x, R00.0, R00.1, R00.8, T82.1, Z45.0, Z95.0`
+
+
+```{r table14, echo=FALSE, results="asis"}
+
+IRCm <- tudo %>% 
+  select(sex, Age, iIRC) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iIRC == 1),
+            Prevalence = round(mean(iIRC)*100,2),
+            sd = round(sd(iIRC),2))
+
+IRCf <- tudo %>% 
+  select(sex, Age, iIRC) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iIRC == 1),
+            Prevalence = round(mean(iIRC)*100,2),
+            sd = round(sd(iIRC),2))
+
+
+IRCm <- mutate(IRCm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+IRCf <- mutate(IRCf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+IRC <- cbind(IRCm, IRCf)
+kable(IRC, caption = "Table 14: Prevalence of Cardiac arrhythmias by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are ` I44.1 - I44.3, I45.6, I45.9, I47.x - I49.x, R00.0, R00.1, R00.8, T82.1, Z45.0, Z95.0`", "Cardiac arrhythmias is present at only at the Elixhauser Comorbidity Indexes"))
+
+```
+
+
+
+
+# Peripheral vascular disorders
+
+The ICD-10 codes are `I70.x, I71.x, I73.1, I73.8, I73.9, I77.1, I79.0, I79.2, K55.1, K55.8, K55.9, Z95.8, Z95.9`. Present in both Indexes.  
+
+```{r table15, echo=FALSE, results="asis"}
+
+
+vascular_perifericam <- tudo %>% 
+  select(sex, Age, ivascular_periferica) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ivascular_periferica == 1),
+            Prevalence = round(mean(ivascular_periferica)*100,2),
+            sd = round(sd(ivascular_periferica),2))
+
+vascular_perifericaf <- tudo %>% 
+  select(sex, Age, ivascular_periferica) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ivascular_periferica == 1),
+            Prevalence = round(mean(ivascular_periferica)*100,2),
+            sd = round(sd(ivascular_periferica),2))
+
+
+vascular_perifericam <- mutate(vascular_perifericam, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+vascular_perifericaf <- mutate(vascular_perifericaf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+vascular_periferica <- cbind(vascular_perifericam, vascular_perifericaf)
+kable(vascular_periferica, caption = "Table 15: Prevalence of Peripheral vascular disorders by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `I70.x, I71.x, I73.1, I73.8, I73.9, I77.1, I79.0, I79.2, K55.1, K55.8, K55.9, Z95.8, Z95.9`", "Peripheral vascular disorders are present at both Charlson and Elixhauser Comorbidity Indexes"))
+
+
+
+```
+
+
+
+# Coagulopathy
+
+The ICD-10 codes are `D65 - D68.x, D69.1, D69.3 - D69.6`
+
+
+```{r table16, echo=FALSE, results="asis"}
+
+coagulom <- tudo %>% 
+  select(sex, Age, icoagulo) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(icoagulo == 1),
+            Prevalence = round(mean(icoagulo)*100,2),
+            sd = round(sd(icoagulo),2))
+
+coagulof <- tudo %>% 
+  select(sex, Age, icoagulo) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(icoagulo == 1),
+            Prevalence = round(mean(icoagulo)*100,2),
+            sd = round(sd(icoagulo),2))
+
+
+coagulom <- mutate(coagulom, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+coagulof <- mutate(coagulof, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+coagulo <- cbind(coagulom, coagulof)
+kable(coagulo, caption = "Table 16: Prevalence of Coagulopathy by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `D65 - D68.x, D69.1, D69.3 - D69.6`", "Coagulopathy is only at the Elixhauser Comorbidity Indexes"))
+
+
+```
+
+
+
+
+# Valvular disease
+
+The ICD-10 codes are `A52.0, I05.x - I08.x, I09.1, I09.8, I34.x - I39.x, Q23.0 - Q23.3, Z95.2 - Z95.4`
+
+
+```{r table17, echo=FALSE, results="asis"}
+
+valvularm <- tudo %>% 
+  select(sex, Age, ivalvular) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ivalvular == 1),
+            Prevalence = round(mean(ivalvular)*100,2),
+            sd = round(sd(ivalvular),2))
+
+valvularf <- tudo %>% 
+  select(sex, Age, ivalvular) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ivalvular == 1),
+            Prevalence = round(mean(ivalvular)*100,2),
+            sd = round(sd(ivalvular),2))
+
+
+valvularm <- mutate(valvularm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+valvularf <- mutate(valvularf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+valvular <- cbind(valvularm, valvularf)
+kable(valvular, caption = "Table 17: Prevalence of Valvular disease by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `A52.0, I05.x - I08.x, I09.1, I09.8, I34.x - I39.x, Q23.0 - Q23.3, Z95.2 - Z95.4`", "Valvular disease is only at the Elixhauser Comorbidity Indexes"))
+
+
+
+```
+
+
+# Pulmonary circulation disorders
+
+The ICD-10 codes are `I26.x, I27.x, I28.0, I28.8, I28.9`
+
+
+```{r table18, echo=FALSE, results="asis"}
+
+
+circ_pulmm <- tudo %>% 
+  select(sex, Age, icirc_pulm) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(icirc_pulm == 1),
+            Prevalence = round(mean(icirc_pulm)*100,2),
+            sd = round(sd(icirc_pulm),2))
+
+circ_pulmf <- tudo %>% 
+  select(sex, Age, icirc_pulm) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(icirc_pulm == 1),
+            Prevalence = round(mean(icirc_pulm)*100,2),
+            sd = round(sd(icirc_pulm),2))
+
+
+circ_pulmm <- mutate(circ_pulmm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+circ_pulmf <- mutate(circ_pulmf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+circ_pulm <- cbind(circ_pulmm, circ_pulmf)
+kable(circ_pulm, caption = "Table 18: Prevalence of Pulmonary circulation disorders by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `I26.x, I27.x, I28.0, I28.8, I28.9`", "Pulmonary circulation disorders are present only at the Elixhauser Comorbidity Indexes"))
+
+
+
+```
+
+
+
+
+# Blood loss anaemia
+
+The ICD-10 codes are `D50.0`
+
+
+```{r table19, echo=FALSE, results="asis"}
+
+anemiam <- tudo %>% 
+  select(sex, Age, ianemia) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ianemia == 1),
+            Prevalence = round(mean(ianemia)*100,2),
+            sd = round(sd(ianemia),2))
+
+anemiaf <- tudo %>% 
+  select(sex, Age, ianemia) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ianemia == 1),
+            Prevalence = round(mean(ianemia)*100,2),
+            sd = round(sd(ianemia),2))
+
+
+anemiam <- mutate(anemiam, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+anemiaf <- mutate(anemiaf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+anemia <- cbind(anemiam, anemiaf)
+kable(anemia, caption = "Table 19: Prevalence of Pulmonary circulation disorders by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `D50.0`", "Pulmonary circulation disorders are present only at the Elixhauser Comorbidity Indexes"))
+
+
+
+```
+
+
+# Iron deficiency anemia
+
+The ICD-10 codes are `D50.8, D50.9, D51.x - D53.x`
+
+
+```{r table20, echo=FALSE, results="asis"}
+
+anemia_defm <- tudo %>% 
+  select(sex, Age, ianemia_def) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ianemia_def == 1),
+            Prevalence = round(mean(ianemia_def)*100,2),
+            sd = round(sd(ianemia_def),2))
+
+anemia_deff <- tudo %>% 
+  select(sex, Age, ianemia_def) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ianemia_def == 1),
+            Prevalence = round(mean(ianemia_def)*100,2),
+            sd = round(sd(ianemia_def),2))
+
+
+anemia_defm <- mutate(anemia_defm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+anemia_deff <- mutate(anemia_deff, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+anemia_def <- cbind(anemia_defm, anemia_deff)
+kable(anemia_def, caption = "Table 20: Prevalence of Iron deficiency anemia by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `D50.8, D50.9, D51.x - D53.x`", "Iron deficiency anemia is present only at the Elixhauser Comorbidity Indexes"))
+
+
+
+```
+
+# Alcohol abuse
+
+The ICD-10 codes are `F10, E52, G62.1, I42.6, K29.2, K70.0, K70.3, K70.9, T51.x, Z50.2, Z71.4, Z72.1`
+
+```{r table21, echo=FALSE, results="asis"}
+
+
+alcoolm <- tudo %>% 
+  select(sex, Age, ialcool) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ialcool == 1),
+            Prevalence = round(mean(ialcool)*100,2),
+            sd = round(sd(ialcool),2))
+
+alcoolf <- tudo %>% 
+  select(sex, Age, ialcool) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ialcool == 1),
+            Prevalence = round(mean(ialcool)*100,2),
+            sd = round(sd(ialcool),2))
+
+
+alcoolm <- mutate(alcoolm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+alcoolf <- mutate(alcoolf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+alcool <- cbind(alcoolm, alcoolf)
+kable(alcool, caption = "Table 21: Prevalence of Alcohol abuse by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(general = "The ICD-10 codes considered here were `F10, E52, G62.1, I42.6, K29.2, K70.0, K70.3, K70.9, T51.x, Z50.2, Z71.4, Z72.1`")
+
+
+```
+
+
+
+# Illicit drugs abuse
+
+The ICD-10 codes are `F11.x - F16.x, F18.x, F19.x, Z71.5, Z72.2`
+
+
+```{r table22, echo=FALSE, results="asis"}
+
+
+drogasm <- tudo %>% 
+  select(sex, Age, idrogas) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(idrogas == 1),
+            Prevalence = round(mean(idrogas)*100,2),
+            sd = round(sd(idrogas),2))
+
+drogasf <- tudo %>% 
+  select(sex, Age, idrogas) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(idrogas == 1),
+            Prevalence = round(mean(idrogas)*100,2),
+            sd = round(sd(idrogas),2))
+
+
+drogasm <- mutate(drogasm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+drogasf <- mutate(drogasf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+drogas <- cbind(drogasm, drogasf)
+kable(drogas, caption = "Table 22: Prevalence of Illicit drugs abuse by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(general = "The ICD-10 codes are `F11.x - F16.x, F18.x, F19.x, Z71.5, Z72.2`")
+
+
+```
+
+
+
+# Psychosis
+
+The ICD-10 codes are `F20.x, F22.x - F25.x, F28.x, F29.x, F30.2, F31.2, F31.5`
+
+
+```{r table23, echo=FALSE, results="asis"}
+
+psicosesm <- tudo %>% 
+  select(sex, Age, ipsicoses) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ipsicoses == 1),
+            Prevalence = round(mean(ipsicoses)*100,2),
+            sd = round(sd(ipsicoses),2))
+
+psicosesf <- tudo %>% 
+  select(sex, Age, ipsicoses) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ipsicoses == 1),
+            Prevalence = round(mean(ipsicoses)*100,2),
+            sd = round(sd(ipsicoses),2))
+
+
+psicosesm <- mutate(psicosesm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+psicosesf <- mutate(psicosesf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+psicoses <- cbind(psicosesm, psicosesf)
+kable(psicoses, caption = "Table 23: Prevalence of Psychosis by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes used here are `F20.x, F22.x - F25.x, F28.x, F29.x, F30.2, F31.2, F31.5`", "Psychosis is listed only in the Elixhauser Comorbidity Index"))
+
+```
+
+
+# Depression
+
+The ICD-10 codes are `F20.4, F31.3 - F31.5, F32.x, F33.x, F34.1, F41.2, F43.2`
+
+
+```{r table24, echo=FALSE, results="asis"}
+
+depref <- tudo %>% 
+  select(sex, Age, idepre) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(idepre == 1),
+            Prevalence = round(mean(idepre)*100,2),
+            sd = round(sd(idepre),2))
+
+deprem <- tudo %>% 
+  select(sex, Age, idepre) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(idepre == 1),
+            Prevalence = round(mean(idepre)*100,2),
+            sd = round(sd(idepre),2))
+
+deprem <- mutate(deprem, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+depref <- mutate(depref, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+depre <- cbind(deprem, depref)
+kable(depre, caption = "Table 24: Prevalence of Depression by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `F20.4, F31.3 - F31.5, F32.x, F33.x, F34.1, F41.2, F43.2`", "Depression is listed only in the Elixhauser Comorbidity Index"))
+
+
+```
+
+
+# Hypothiroidism
+
+The ICD-10 codes are `E00.x - E03.x, E89.0`
+
+
+```{r table25, echo=FALSE, results="asis"}
+
+
+hipoTf <- tudo %>% 
+  select(sex, Age, ihipoT) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ihipoT == 1),
+            Prevalence = round(mean(ihipoT)*100,2),
+            sd = round(sd(ihipoT),2))
+
+hipoTm <- tudo %>% 
+  select(sex, Age, ihipoT) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ihipoT == 1),
+            Prevalence = round(mean(ihipoT)*100,2),
+            sd = round(sd(ihipoT),2))
+
+hipoTm <- mutate(hipoTm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+hipoTf <- mutate(hipoTf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+hipoT <- cbind(hipoTm, hipoTf)
+kable(hipoT, caption = "Table 25: Prevalence of Hypothiroidism by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `E00.x - E03.x, E89.0`", "Hypothiroidism is listed only in the Elixhauser Comorbidity Index"))
+
+
+
+```
+
+
+
+# Fluid and electrolyte disorders
+
+The ICD-10 codes are `E22.2, E86.x, E87.x`
+
+
+```{r table26, echo=FALSE, results="asis"}
+
+
+
+eletrolitosf <- tudo %>% 
+  select(sex, Age, ieletrolitos) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ieletrolitos == 1),
+            Prevalence = round(mean(ieletrolitos)*100,2),
+            sd = round(sd(ieletrolitos),2))
+
+eletrolitosm <- tudo %>% 
+  select(sex, Age, ieletrolitos) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ieletrolitos == 1),
+            Prevalence = round(mean(ieletrolitos)*100,2),
+            sd = round(sd(ieletrolitos),2))
+
+eletrolitosm <- mutate(eletrolitosm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+eletrolitosf <- mutate(eletrolitosf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+eletrolitos <- cbind(eletrolitosm, eletrolitosf)
+kable(eletrolitos, caption = "Table 26: Prevalence of Fluid and electrolyte disorders by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `E22.2, E86.x, E87.x`", "Fluid and electrolyte disorders are listed only in the Elixhauser Comorbidity Index"))
+
+
+```
+
+
+
+
+# Rheumatoid arthritis/collagen vascular diseases (Elixhauser Index)
+
+The ICD-10 codes are `L94.0, L94.1, L94.3, M05.x, M06.x, M08.x, M12.0, M12.3, M30.x, M31.0 - M31.3, M32.x - M35.x, M45.x, M46.1, M46.8, M46.9`
+
+
+```{r table27, echo=FALSE, results="asis"}
+
+
+
+reumatismo_elixf <- tudo %>% 
+  select(sex, Age, ireumatismo_elix) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ireumatismo_elix == 1),
+            Prevalence = round(mean(ireumatismo_elix)*100,2),
+            sd = round(sd(ireumatismo_elix),2))
+
+reumatismo_elixm <- tudo %>% 
+  select(sex, Age, ireumatismo_elix) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ireumatismo_elix == 1),
+            Prevalence = round(mean(ireumatismo_elix)*100,2),
+            sd = round(sd(ireumatismo_elix),2))
+
+reumatismo_elixm <- mutate(reumatismo_elixm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+reumatismo_elixf <- mutate(reumatismo_elixf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+reumatismo_elix <- cbind(reumatismo_elixm, reumatismo_elixf)
+kable(reumatismo_elix, caption = "Table 27: Rheumatoid arthritis/collagen vascular diseases by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `L94.0, L94.1, L94.3, M05.x, M06.x, M08.x, M12.0, M12.3, M30.x, M31.0 - M31.3, M32.x - M35.x, M45.x, M46.1, M46.8, M46.9`", "Rheumatoid arthritis/collagen vascular diseases are listed only in the Elixhauser Comorbidity Index"))
+
+
+```
+
+
+
+# Rheumatic disease (Charlson Index)
+
+The ICD-10 codes are `M05.x, M06.x, M31.5, M32.x - M34.x, M35.1, M35.3, M36.0`. Only present in the Charlson Index.  
+
+
+```{r table28, echo=FALSE, results="asis"}
+
+
+reumatismo_charlsonf <- tudo %>% 
+  select(sex, Age, ireumatismo_charlson) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ireumatismo_charlson == 1),
+            Prevalence = round(mean(ireumatismo_charlson)*100,2),
+            sd = round(sd(ireumatismo_charlson),2))
+
+reumatismo_charlsonm <- tudo %>% 
+  select(sex, Age, ireumatismo_charlson) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ireumatismo_charlson == 1),
+            Prevalence = round(mean(ireumatismo_charlson)*100,2),
+            sd = round(sd(ireumatismo_charlson),2))
+
+reumatismo_charlsonm <- mutate(reumatismo_charlsonm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+reumatismo_charlsonf <- mutate(reumatismo_charlsonf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+reumatismo_charlson <- cbind(reumatismo_charlsonm, reumatismo_charlsonf)
+kable(reumatismo_charlson, caption = "Table 28: Rheumatic disease by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `M05.x, M06.x, M31.5, M32.x - M34.x, M35.1, M35.3, M36.0`", "Rheumatic diseases are listed only in the Charlson Comorbidity Index"))
+
+
+```
+
+
+
+
+
+# Other neurological disorders
+
+The ICD-10 codes are `G10.x - G13.x, G20.x - G22.x, G25.4, G25.5, G31.2, G31.8, G31.9, G32.x, G35.x - G37.x, G40.x, G41.x, G93.1, G93.4, R47.0, R56.x`
+
+
+```{r table29, echo=FALSE, results="asis"}
+
+
+neurof <- tudo %>% 
+  select(sex, Age, ineuro) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ineuro == 1),
+            Prevalence = round(mean(ineuro)*100,2),
+            sd = round(sd(ineuro),2))
+
+neurom <- tudo %>% 
+  select(sex, Age, ineuro) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ineuro == 1),
+            Prevalence = round(mean(ineuro)*100,2),
+            sd = round(sd(ineuro),2))
+
+neurom <- mutate(neurom, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+neurof <- mutate(neurof, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+neuro <- cbind(neurom, neurof)
+kable(neuro, caption = "Table 29: Prevalence of other neurological disorders by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `G10.x - G13.x, G20.x - G22.x, G25.4, G25.5, G31.2, G31.8, G31.9, G32.x, G35.x - G37.x, G40.x, G41.x, G93.1, G93.4, R47.0, R56.x`", "Other neurological disorders are listed only in the Elixhauser Comorbidity Index"))
+
+
+```
+
+
+# Cerebrovascular disease
+
+The ICD-10 codes are `G45.x, G46.x, H34.0, I60.x - I69.x`. Only present in the Charlson Index.  
+
+
+```{r table30, echo=FALSE, results="asis"}
+
+
+AVCf <- tudo %>% 
+  select(sex, Age, iAVC) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iAVC == 1),
+            Prevalence = round(mean(iAVC)*100,2),
+            sd = round(sd(iAVC),2))
+
+AVCm <- tudo %>% 
+  select(sex, Age, iAVC) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iAVC == 1),
+            Prevalence = round(mean(iAVC)*100,2),
+            sd = round(sd(iAVC),2))
+
+AVCm <- mutate(AVCm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+AVCf <- mutate(AVCf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+AVC <- cbind(AVCm, AVCf)
+kable(AVC, caption = "Table 30: Prevalence of other neurological disorders by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `G45.x, G46.x, H34.0, I60.x - I69.x`", "Cerebrovascular disease is listed only in the Charlson Comorbidity Index"))
+
+
+```
+
+
+
+# Dementia
+
+The ICD-10 codes are `G45.x, G46.x, H34.0, I60.x - I69.x`. Only present in the Charlson Index.  
+
+
+```{r table31, echo=FALSE, results="asis"}
+
+demenciaf <- tudo %>% 
+  select(sex, Age, idemencia) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(idemencia == 1),
+            Prevalence = round(mean(idemencia)*100,2),
+            sd = round(sd(idemencia),2))
+
+demenciam <- tudo %>% 
+  select(sex, Age, idemencia) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(idemencia == 1),
+            Prevalence = round(mean(idemencia)*100,2),
+            sd = round(sd(idemencia),2))
+
+demenciam <- mutate(demenciam, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+demenciaf <- mutate(demenciaf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+demencia <- cbind(demenciam, demenciaf)
+kable(demencia, caption = "Table 31: Prevalence of Dementia by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `G45.x, G46.x, H34.0, I60.x - I69.x`", "Dementia is listed only in the Charlson Comorbidity Index"))
+
+
+```
+
+
+# Paralysis
+
+The ICD-10 codes are `G04.1, G11.4, G80.1, G80.2, G81.x, G82.x, G83.0 - G83.4, G83.9`. Present in both Indexes.
+
+
+```{r table32, echo=FALSE, results="asis"}
+
+
+plegiaf <- tudo %>% 
+  select(sex, Age, iplegia) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iplegia == 1),
+            Prevalence = round(mean(iplegia)*100,2),
+            sd = round(sd(iplegia),2))
+
+plegiam <- tudo %>% 
+  select(sex, Age, iplegia) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iplegia == 1),
+            Prevalence = round(mean(iplegia)*100,2),
+            sd = round(sd(iplegia),2))
+
+plegiam <- mutate(plegiam, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+plegiaf <- mutate(plegiaf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+plegia <- cbind(plegiam, plegiaf)
+kable(plegia, caption = "Table 32: Prevalence of Paralysis by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `G04.1, G11.4, G80.1, G80.2, G81.x, G82.x, G83.0 - G83.4, G83.9`", "Paralysis is listed in both Charlson and Elixhauser Comorbidity Indexes"))
+
+
+
+```
+
+
+
+# Chronic pulmonary disease
+
+The ICD-10 codes are `I27.8, I27.9, J40.x - J47.x, J60.x - J67.x, J68.4, J70.1, J70.3`. Only present in the Charlson Index.  
+
+
+```{r table33, echo=FALSE, results="asis"}
+
+
+DPOCf <- tudo %>% 
+  select(sex, Age, iDPOC) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iDPOC == 1),
+            Prevalence = round(mean(iDPOC)*100,2),
+            sd = round(sd(iDPOC),2))
+
+DPOCm <- tudo %>% 
+  select(sex, Age, iDPOC) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iDPOC == 1),
+            Prevalence = round(mean(iDPOC)*100,2),
+            sd = round(sd(iDPOC),2))
+
+DPOCm <- mutate(DPOCm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+DPOCf <- mutate(DPOCf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+DPOC <- cbind(DPOCm, DPOCf)
+kable(DPOC, caption = "Table 33: Prevalence of Chronic pulmonary disease by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `I27.8, I27.9, J40.x - J47.x, J60.x - J67.x, J68.4, J70.1, J70.3`", "Chronic pulmonary disease is only listed in the Charlson Comorbidity Indexes"))
+
+
+```
+
+
+
+
+# Peptic ulcer disease (excluding bleeding)
+
+The ICD-10 codes are `K25.7, K25.9, K26.7, K26.9, K27.7, K27.9, K28.7, K28.9`. Present in both Indexes.
+
+
+```{r table34, echo=FALSE, results="asis"}
+
+
+pepticaf <- tudo %>% 
+  select(sex, Age, ipeptica) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ipeptica == 1),
+            Prevalence = round(mean(ipeptica)*100,2),
+            sd = round(sd(ipeptica),2))
+
+pepticam <- tudo %>% 
+  select(sex, Age, ipeptica) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ipeptica == 1),
+            Prevalence = round(mean(ipeptica)*100,2),
+            sd = round(sd(ipeptica),2))
+
+pepticam <- mutate(pepticam, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+pepticaf <- mutate(pepticaf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+peptica <- cbind(pepticam, pepticaf)
+kable(peptica, caption = "Table 34: Prevalence of Peptic ulcer disease (excluding bleeding) by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `K25.7, K25.9, K26.7, K26.9, K27.7, K27.9, K28.7, K28.9`", "Peptic ulcer disease (excluding bleeding) is listed in both Charlson and Elixhauser Comorbidity Indexes"))
+
+
+```
+
+
+
+# Mild liver disease
+
+The ICD-10 codes are `K25.7, K25.9, K26.7, K26.9, K27.7, K27.9, K28.7, K28.9`. Present only at the Charlson Index. 
+
+
+```{r table35, echo=FALSE, results="asis"}
+
+
+mild_liverf <- tudo %>% 
+  select(sex, Age, imild_liver) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(imild_liver == 1),
+            Prevalence = round(mean(imild_liver)*100,2),
+            sd = round(sd(imild_liver),2))
+
+mild_liverm <- tudo %>% 
+  select(sex, Age, imild_liver) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(imild_liver == 1),
+            Prevalence = round(mean(imild_liver)*100,2),
+            sd = round(sd(imild_liver),2))
+
+mild_liverm <- mutate(mild_liverm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+mild_liverf <- mutate(mild_liverf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+mild_liver <- cbind(mild_liverm, mild_liverf)
+kable(mild_liver, caption = "Table 35: Prevalence of Mild liver disease by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `K25.7, K25.9, K26.7, K26.9, K27.7, K27.9, K28.7, K28.9`", "Mild liver disease is listed at the Charlson Comorbidity Indexes", "Elixhauser Comorbidity Indexes has one cathegory called Liver cirrhosis that merges both Mild and severe liver diseases"))
+
+
+
+```
+
+
+# Moderate or severe liver disease
+
+The ICD-10 codes are `I85.0, I85.9, I86.4, I98.2, K70.4, K71.1, K72.1, K72.9, K76.5, K76.6, K76.7`. Only present in the Charlson Index. 
+
+
+```{r table36, echo=FALSE, results="asis"}
+
+
+severe_liverf <- tudo %>% 
+  select(sex, Age, isevere_liver) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(isevere_liver == 1),
+            Prevalence = round(mean(isevere_liver)*100,2),
+            sd = round(sd(isevere_liver),2))
+
+severe_liverm <- tudo %>% 
+  select(sex, Age, isevere_liver) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(isevere_liver == 1),
+            Prevalence = round(mean(isevere_liver)*100,2),
+            sd = round(sd(isevere_liver),2))
+
+severe_liverm <- mutate(severe_liverm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+severe_liverf <- mutate(severe_liverf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+severe_liver <- cbind(severe_liverm, severe_liverf)
+kable(severe_liver, caption = "Table 36: Prevalence of Moderate or severe liver disease by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `I85.0, I85.9, I86.4, I98.2, K70.4, K71.1, K72.1, K72.9, K76.5, K76.6, K76.7`", "Moderate or severe liver disease is listed at the Charlson Comorbidity Indexes", "Elixhauser Comorbidity Indexes has one cathegory called Liver cirrhosis that merges both Mild and severe liver diseases"))
+
+
+``` 
+
+
+
+# Liver cirrhosis
+
+The ICD-10 codes are `B18.x, I85.x, I86.4, I98.2, K70.x, K71.1, K71.3 - K71.5, K71.7, K72.x - K74.x, K76.0, K76.2 - K76.9, Z94.4`. Only present in the Elixhauser Index. 
+
+
+```{r table37, echo=FALSE, results="asis"}
+
+
+liverf <- tudo %>% 
+  select(sex, Age, iliver) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iliver == 1),
+            Prevalence = round(mean(iliver)*100,2),
+            sd = round(sd(iliver),2))
+
+liverm <- tudo %>% 
+  select(sex, Age, iliver) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iliver == 1),
+            Prevalence = round(mean(iliver)*100,2),
+            sd = round(sd(iliver),2))
+
+liverm <- mutate(liverm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+liverf <- mutate(liverf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+liver <- cbind(liverm, liverf)
+kable(liver, caption = "Table 37: Prevalence of Liver cirrhosis by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `B18.x, I85.x, I86.4, I98.2, K70.x, K71.1, K71.3 - K71.5, K71.7, K72.x - K74.x, K76.0, K76.2 - K76.9, Z94.4`", "Liver cirrhosis is listed at the Elixhauser Comorbidity Indexes", "Elixhauser Comorbidity Indexes has one cathegory called Liver disease that merges both Mild and severe liver diseases"))
+
+```
+
+
+
+# Weight loss
+
+The ICD-10 codes are ` E40.x - E46.x, R63.4, R64`
+
+
+```{r table38, echo=FALSE, results="asis"}
+
+
+comsumpf <- tudo %>% 
+  select(sex, Age, icomsump) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(icomsump == 1),
+            Prevalence = round(mean(icomsump)*100,2),
+            sd = round(sd(icomsump),2))
+
+comsumpm <- tudo %>% 
+  select(sex, Age, icomsump) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(icomsump == 1),
+            Prevalence = round(mean(icomsump)*100,2),
+            sd = round(sd(icomsump),2))
+
+comsumpm <- mutate(comsumpm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+comsumpf <- mutate(comsumpf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+comsump <- cbind(comsumpm, comsumpf)
+kable(comsump, caption = "Table 38: Prevalence of Weight loss by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are ` E40.x - E46.x, R63.4, R64`", "Weight loss is listed at the Elixhauser Comorbidity Indexes"))
+
+
+```
+
+
+
+# Solid tumour without metastasis
+
+The ICD-10 codes are `C00.x - C26.x, C30.x - C34.x, C37.x - C41.x, C43.x, C45.x - C58.x, C60.x - C76.x, C97.x`. Present in both Indexes.
+
+
+```{r table39, echo=FALSE, results="asis"}
+
+
+
+neoplasiaf <- tudo %>% 
+  select(sex, Age, ineoplasia) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ineoplasia == 1),
+            Prevalence = round(mean(ineoplasia)*100,2),
+            sd = round(sd(ineoplasia),2))
+
+neoplasiam <- tudo %>% 
+  select(sex, Age, ineoplasia) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ineoplasia == 1),
+            Prevalence = round(mean(ineoplasia)*100,2),
+            sd = round(sd(ineoplasia),2))
+
+neoplasiam <- mutate(neoplasiam, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+neoplasiaf <- mutate(neoplasiaf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+neoplasia <- cbind(neoplasiam, neoplasiaf)
+kable(neoplasia, caption = "Table 39: Prevalence of Solid tumour without metastasis by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `C00.x - C26.x, C30.x - C34.x, C37.x - C41.x, C43.x, C45.x - C58.x, C60.x - C76.x, C97.x`", "Solid tumour without metastasis is listed in both Charlson and Elixhauser Comorbidity Indexes"))
+
+
+
+```        
+
+
+# Metastatic cancer
+
+The ICD-10 codes are `C77.x - C80.x`. Present in both Indexes.
+
+
+```{r table40, echo=FALSE, results="asis"}
+
+
+metastasef <- tudo %>% 
+  select(sex, Age, imetastase) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(imetastase == 1),
+            Prevalence = round(mean(imetastase)*100,2),
+            sd = round(sd(imetastase),2))
+
+metastasem <- tudo %>% 
+  select(sex, Age, imetastase) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(imetastase == 1),
+            Prevalence = round(mean(imetastase)*100,2),
+            sd = round(sd(imetastase),2))
+
+metastasem <- mutate(metastasem, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+metastasef <- mutate(metastasef, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+metastase <- cbind(metastasem, metastasef)
+kable(metastase, caption = "Table 40: Prevalence of Metastatic cancer by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `C77.x - C80.x`", "Metastatic cancer is listed in both Charlson and Elixhauser Comorbidity Indexes"))
+
+
+```
+
+
+
+# Lymphoma
+
+The ICD-10 codes are `C81.x - C85.x, C88.x, C96.x, C90.0, C90.2`. 
+
+
+```{r table41, echo=FALSE, results="asis"}
+
+linfomaf <- tudo %>% 
+  select(sex, Age, ilinfoma) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ilinfoma == 1),
+            Prevalence = round(mean(ilinfoma)*100,2),
+            sd = round(sd(ilinfoma),2))
+
+linfomam <- tudo %>% 
+  select(sex, Age, ilinfoma) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ilinfoma == 1),
+            Prevalence = round(mean(ilinfoma)*100,2),
+            sd = round(sd(ilinfoma),2))
+
+linfomam <- mutate(linfomam, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+linfomaf <- mutate(linfomaf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+linfoma <- cbind(linfomam, linfomaf)
+kable(linfoma, caption = "Table 41: Prevalence of Lymphoma by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `C81.x - C85.x, C88.x, C96.x, C90.0, C90.2`", "Lymphoma is listed in the Elixhauser Comorbidity Indexes", "Charlson consider Lymphoma combined with any type of cancer"))
+
+```
+
+# Leukemia
+
+The ICD-10 codes are `B20.x - B22.x, B24.x`. Present in both Indexes.
+
+
+```{r table42, echo=FALSE, results="asis"}
+
+
+leucemiaf <- tudo %>% 
+  select(sex, Age, ileucemia) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ileucemia == 1),
+            Prevalence = round(mean(ileucemia)*100,2),
+            sd = round(sd(ileucemia),2))
+
+leucemiam <- tudo %>% 
+  select(sex, Age, ileucemia) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(ileucemia == 1),
+            Prevalence = round(mean(ileucemia)*100,2),
+            sd = round(sd(ileucemia),2))
+
+leucemiam <- mutate(leucemiam, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+leucemiaf <- mutate(leucemiaf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+leucemia <- cbind(leucemiam, leucemiaf)
+kable(leucemia, caption = "Table 42: Prevalence of Leukemia by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `B20.x - B22.x, B24.x`", "Leukemia is not listed in any index, but is included in the Cancer domain at the Charlson Index"))
+
+
+
+```
+
+
+# AIDS/HIV
+
+The ICD-10 codes are `B20.x - B22.x, B24.x`. Present in both Indexes.
+
+
+```{r table43, echo=FALSE, results="asis"}
+
+
+SIDAf <- tudo %>% 
+  select(sex, Age, iSIDA) %>% 
+  filter(sex == 'Female') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iSIDA == 1),
+            Prevalence = round(mean(iSIDA)*100,2),
+            sd = round(sd(iSIDA),2))
+
+SIDAm <- tudo %>% 
+  select(sex, Age, iSIDA) %>% 
+  filter(sex == 'Male') %>% 
+  group_by(Age) %>% 
+  summarise(Total = n(),
+            Affected = sum(iSIDA == 1),
+            Prevalence = round(mean(iSIDA)*100,2),
+            sd = round(sd(iSIDA),2))
+
+SIDAm <- mutate(SIDAm, Prevalence = str_c(Prevalence, " (", sd, ")")) %>% select(Age, Total, Affected, Prevalence)
+SIDAf <- mutate(SIDAf, Prevalence = paste(Prevalence, " (", sd, ")")) %>% select(Total, Affected, Prevalence)
+
+SIDA <- cbind(SIDAm, SIDAf)
+kable(SIDA, caption = "Table 43: Prevalence of AIDS/HIV by age and gender at the AP 3.1 in Rio de Janeiro, 2018") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>% 
+  add_header_above(c(" ", "Male (N = 238.487)" = 3, "Female (N = 343.433)" = 3)) %>%
+  footnote(number = c("The ICD-10 codes are `B20.x - B22.x, B24.x`", "AIDS/HIV is present in both Charlson and Elixhauser comorbidity Indexes"))
+
+
+```
+
+
+# Multimorbidity
+
+```{r tablesss, echo=FALSE, results="asis"}
+
+tab42 <- tableby(MM ~ Age, data=tudo, test=FALSE, numeric.stats=c("countcellpct"))
+
+summary(tab42, title = "Table 42:  Multimorbidity by age in Rio de Janeiro, 2018")
+labels(tab42) <- c(MM=" Multimorbidity")
+
+```
+
+
+
+```{r tabledd, echo=FALSE, results="asis"}
+
+tabdd <- tableby(MM ~ Age, data=tudo, test=FALSE, numeric.stats=c("countrowpct"))
+
+summary(tabdd, title = "Table dd:  Multimorbidity by age in Rio de Janeiro, 2018")
+labels(tabdd) <- c(MM=" Multimorbidity")
+
+```
+
+
+```{r tableddd, echo=FALSE, results="asis"}
+
+tabddd <- tableby(MM ~ Age, data=tudo, test=FALSE, numeric.stats=c("binomCI"))
+
+summary(tabddd, title = "Table ddd:  Multimorbidity by age in Rio de Janeiro, 2018")
+labels(tabddd) <- c(MM=" Multimorbidity")
+
+```
+
+
+
+
+## References
+

@@ -4,6 +4,8 @@ navbar:
   left:
     - text: "Home"
       href: index.html
+    - text: "Chronic Health Conditions"
+      href: prevalences.html
     - text: "Blood tests"
       href: blood.html
     - text: "Drugs prescribed"
