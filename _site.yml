@@ -4,6 +4,10 @@ navbar:
   left:
     - text: "Home"
       href: index.html
+    - text: "Agenda"
+      href: calendario.html
+    - text: "To do list"
+      href: todo.html
     - text: "Chronic Health Conditions"
       href: prevalences.html
     - text: "Blood tests"

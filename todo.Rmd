@@ -1,0 +1,15 @@
+# TODO list
+
+
+## Tarefas para serem feitas com os bancos de dados
+
+### PRIME
+
+1. selecionar quais consultas foram feitas por m?dicos - FEITO
+2. selecionar CID por atendimento - FEITO
+3. selecionar medica??es prescritas - FEITO
+4. selecionar exames laboratoriais - FEITO
+5. Calcular risco cardiovascular para cada paciente
+6. Calcular o ?ndice de Charlson para cada paciente - FEITO
+7. Calcular o ?ndice de Elix Hauser para cada paciente - FEITO
+8. Gerar os c?digos das ICSAPs

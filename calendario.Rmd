@@ -1,0 +1,25 @@
+---
+  output: html_document
+---
+  
+  
+# Agenda
+  
+
+  
+
+## data from EMR:
+  
+* PRIME - ok
+* Vitacare - ok
+* MedicineOne - ok
+* PR - ok
+* e-SUS - still waiting for the data
+
+## Data wrangling with EMR:
+
+* PRIME - done
+* Vitacare - about to start
+* MedicineOne - about to start
+* PR - about to start
+* e-SUS - still waiting for the data
